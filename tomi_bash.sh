@@ -1,11 +1,30 @@
 #!/bin/bash
 
-# Set the alias details
-alias_name="updating"
-alias_command="sudo apt update -y && sudo apt upgrade -y && apt list -u"
+# Clear previous definition of the 'updating' function and alias
+unalias updating &> /dev/null
+sed -i '/function updating()/,/^}/d' ~/.bash_aliases
 
-# Add the alias to .bashrc
-echo "alias $alias_name='$alias_command'" >> ~/.bash_aliases
+# Check if ~/.bashrc already sources ~/.bash_aliases, if not add it
+if ! grep -q '. ~/.bash_aliases' ~/.bashrc; then
+  echo '
+if [ -f ~/.bash_aliases ]; then
+    . ~/.bash_aliases
+fi' >> ~/.bashrc
+fi
+
+# Define the function in .bash_aliases
+echo '
+function updating() {
+    sudo apt update -y
+    sudo apt upgrade -y
+    for pkg in $(apt list --upgradable 2>/dev/null | grep -v "Listing..." | awk -F"/" "{print $1}")
+    do
+        echo "Upgrading $pkg..."
+        sudo apt install -y $pkg
+    done
+    sudo apt autoremove -y
+    apt list -u
+}' >> ~/.bash_aliases
 
 # Make the changes take effect in your current terminal session
 source ~/.bash_aliases
@@ -45,6 +64,6 @@ sudo systemctl start $service_name.service
 
 # Remove telemetry
 ubuntu-report -f send no
-sudo apt remove popularity-contest
+sudo apt remove -y popularity-contest
 
-printf "\n\tAlias 'updating' has been added\n\tScroll boot script has been set up.\n\tTelemetry has been disabled.\n\tRemove 'Problem Reporting' in Settings > Privacy > Problem Reporting > Off\n"
+printf "\n\tFunction 'updating' has been added\n\tScroll boot script has been set up.\n\tTelemetry has been disabled.\n\tRemove 'Problem Reporting' in Settings > Privacy > Problem Reporting > Off\n"
