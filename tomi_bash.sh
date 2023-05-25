@@ -1,8 +1,10 @@
 #!/bin/bash
 
-# Clear previous definition of the 'updating' function and alias
+# Clear previous definitions and functions
 unalias updating &> /dev/null
 sed -i '/function updating()/,/^}/d' ~/.bash_aliases
+unalias r &> /dev/null
+sed -i '/function r()/,/^}/d' ~/.bash_aliases
 
 # Check if ~/.bashrc already sources ~/.bash_aliases, if not add it
 if ! grep -q '. ~/.bash_aliases' ~/.bashrc; then
@@ -12,12 +14,19 @@ if [ -f ~/.bash_aliases ]; then
 fi' >> ~/.bashrc
 fi
 
-# Define the function in .bash_aliases
+# Start a application in the terminal in the background
+echo '
+function r() {
+    setsid "$@" >/dev/null 2>&1 < /dev/null &
+}' >> ~/.bash_aliases
+
+
+# Update all those damn programs (kinda broken rn)
 echo '
 function updating() {
     sudo apt update -y
     sudo apt upgrade -y
-    for pkg in $(apt list --upgradable 2>/dev/null | grep -v "Listing..." | awk -F"/" "{print $1}")
+    for pkg in $(apt list --upgradable 2>/dev/null | grep -v "Listing..." | cut -d' ' -f1 | awk -F"/" "{print $1}")
     do
         echo "Upgrading $pkg..."
         sudo apt install -y $pkg
@@ -26,18 +35,20 @@ function updating() {
     apt list -u
 }' >> ~/.bash_aliases
 
-# Make the changes take effect in your current terminal session
+# Does not really work lol
 source ~/.bash_aliases
+source ~/.bashrc
 
-# Create a new script file
+# Create a new script file (kinda redundant)
 script_path="$HOME/fix_scroll.sh"
 service_name="fix_scroll"
 
+# Correct scroll direction 💕
 echo '#!/usr/bin/bash
 synclient VertScrollDelta=-42
 synclient HorizScrollDelta=-42' > $script_path
 
-# Make sure the script is executable
+# Make sure the script is executable, don't think it works?
 chmod +x $script_path
 
 # Add the script to cron
@@ -62,7 +73,9 @@ sudo systemctl enable $service_name.service
 # Start the service immediately
 sudo systemctl start $service_name.service
 
-# Remove telemetry
+# Scroll should now work on reboot/boot. No more manual script-running! :D
+
+# Remove telemetry 🤮
 ubuntu-report -f send no
 sudo apt remove -y popularity-contest
 
