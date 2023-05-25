@@ -1,3 +1,6 @@
+![wisdom](https://i.imgflip.com/5cwihv.png)
+
+## Notes
 We have created a bash function called "updating", not an alias. When you use the alias command, it won't show functions, 
 only aliases. To view your bash function, use the typeset -f or declare -f command:
 
