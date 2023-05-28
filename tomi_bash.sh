@@ -21,12 +21,12 @@ function r() {
 }' >> ~/.bash_aliases
 
 
-# Update all those damn programs (kinda broken rn)
+# Update/upgrade all those damn programs.
 echo '
 function updating() {
     sudo apt update -y
     sudo apt upgrade -y
-    for pkg in $(apt list --upgradable 2>/dev/null | grep -v "Listing..." | cut -d' ' -f1 | awk -F"/" "{print $1}")
+    for pkg in $(apt list --upgradable 2>/dev/null | grep -v "Listing..." | cut -d" " -f1 | awk -F/ '\''{print $1}'\'')
     do
         echo "Upgrading $pkg..."
         sudo apt install -y $pkg
@@ -38,6 +38,11 @@ function updating() {
 # Does not really work lol
 source ~/.bash_aliases
 source ~/.bashrc
+
+# Make the laptop go to sleep when lid is closed
+sudo sed -i 's/#HandleLidSwitch=suspend/HandleLidSwitch=suspend/g' /etc/systemd/logind.conf
+#sudo systemctl restart systemd-logind
+printf "\nPlease reboot your computer for the changes to take effect.\n"
 
 # Create a new script file (kinda redundant)
 script_path="$HOME/fix_scroll.sh"
@@ -79,4 +84,12 @@ sudo systemctl start $service_name.service
 ubuntu-report -f send no
 sudo apt remove -y popularity-contest
 
-printf "\n\tFunction 'updating' has been added\n\tScroll boot script has been set up.\n\tTelemetry has been disabled.\n\tRemove 'Problem Reporting' in Settings > Privacy > Problem Reporting > Off\n"
+# Fuck you Microsoft. Remove .NET telemetry.
+if ! sudo grep -q 'DOTNET_CLI_TELEMETRY_OPTOUT=1' /etc/environment; then
+    echo 'DOTNET_CLI_TELEMETRY_OPTOUT=1' | sudo tee -a /etc/environment > /dev/null
+fi
+source /etc/environment
+printf "\n/etc/environment:\n"
+cat /etc/environment
+
+printf "\n\tFunction 'updating' has been added\n\tScroll boot script has been set up.\n\tTelemetry has been disabled.\n\tRemove 'Problem Reporting' in Settings > Privacy > Problem Reporting > Off\n\tLaptop is set to sleep when lid is closed.\n"
